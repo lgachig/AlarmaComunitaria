@@ -1,7 +1,11 @@
 const mongoose = require('mongoose');
 const Punto = require('../models/Punto');
 
-// GET todos los puntos
+/**
+ * Obtiene todos los puntos del mapa (robo, secuestro, cámara) desde la base de datos.
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ */
 const getPuntos = async (req, res) => {
   try {
     const puntos = await Punto.find();
@@ -12,7 +16,11 @@ const getPuntos = async (req, res) => {
   }
 };
 
-// POST crear nuevo punto
+/**
+ * Crea un nuevo punto en el mapa. Si no se envía usuarioId válido, se usa un ObjectId de ejemplo.
+ * @param {import('express').Request} req - body: tipo, lat, lng, titulo, descripcion, fecha?, usuarioId?, direccion?
+ * @param {import('express').Response} res
+ */
 const createPunto = async (req, res) => {
   try {
     // Si no hay usuarioId válido, usar uno de prueba
@@ -38,7 +46,11 @@ const createPunto = async (req, res) => {
   }
 };
 
-// POST crear múltiples puntos
+/**
+ * Crea múltiples puntos en una sola petición. Espera un array de objetos con la misma estructura que createPunto.
+ * @param {import('express').Request} req - body: Array<{ tipo, lat, lng, titulo, descripcion, usuarioId, ... }>
+ * @param {import('express').Response} res
+ */
 const createPuntosBulk = async (req, res) => {
   try {
     if (!Array.isArray(req.body)) {

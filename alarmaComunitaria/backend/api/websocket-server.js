@@ -1,8 +1,16 @@
+/**
+ * Servidor WebSocket para notificaciones en tiempo real.
+ * Autenticación por JWT en query (?token=). Mantiene lista de notificaciones en memoria y hace broadcast a los clientes.
+ */
 const WebSocket = require('ws');
 const jwt = require('jsonwebtoken');
 const http = require('http');
 
 class NotificationWebSocketServer {
+  /**
+   * @param {http.Server} server - Servidor HTTP sobre el que se monta el WebSocket
+   * @param {string} jwtSecret - Secreto para verificar el JWT
+   */
   constructor(server, jwtSecret) {
     this.wss = new WebSocket.Server({ server });
     this.jwtSecret = jwtSecret;
@@ -12,6 +20,7 @@ class NotificationWebSocketServer {
     this.initialize();
   }
 
+  /** Inicializa el listener de conexiones WebSocket. */
   initialize() {
     this.wss.on('connection', (ws, req) => {
       this.handleConnection(ws, req);
@@ -20,6 +29,7 @@ class NotificationWebSocketServer {
     console.log('🔌 WebSocket server initialized');
   }
 
+  /** Gestiona una nueva conexión: extrae token, verifica JWT, envía últimas notificaciones y registra handlers. */
   handleConnection(ws, req) {
     try {
       // Extract token from query parameters
@@ -73,6 +83,7 @@ class NotificationWebSocketServer {
     }
   }
 
+  /** Procesa mensajes del cliente: send_notification, mark_as_read, mark_all_read. */
   handleMessage(ws, data) {
     try {
       const message = JSON.parse(data);
@@ -103,6 +114,7 @@ class NotificationWebSocketServer {
     }
   }
 
+  /** Crea una notificación desde datos enviados por el cliente y hace broadcast. */
   handleNewNotification(ws, notificationData, sender) {
     try {
       // Create new notification
@@ -151,6 +163,7 @@ class NotificationWebSocketServer {
     }
   }
 
+  /** Marca una notificación como leída y hace broadcast de la actualización. */
   handleMarkAsRead(ws, notificationId, client) {
     const notification = this.notifications.find(n => n.id === notificationId);
     if (notification) {
@@ -167,6 +180,7 @@ class NotificationWebSocketServer {
     }
   }
 
+  /** Marca todas las notificaciones como leídas y hace broadcast. */
   handleMarkAllAsRead(ws, client) {
     this.notifications.forEach(notification => {
       notification.isRead = true;
@@ -180,6 +194,7 @@ class NotificationWebSocketServer {
     console.log(`✅ All notifications marked as read by ${client.email}`);
   }
 
+  /** Elimina el cliente del mapa al cerrar la conexión. */
   handleDisconnect(ws) {
     const client = this.clients.get(ws);
     if (client) {
@@ -188,6 +203,7 @@ class NotificationWebSocketServer {
     }
   }
 
+  /** Envía un mensaje a todos los clientes WebSocket conectados. */
   broadcast(message) {
     this.wss.clients.forEach(client => {
       if (client.readyState === WebSocket.OPEN) {
@@ -196,20 +212,24 @@ class NotificationWebSocketServer {
     });
   }
 
+  /** Envía un mensaje a un único cliente si está OPEN. */
   sendToClient(ws, message) {
     if (ws.readyState === WebSocket.OPEN) {
       ws.send(JSON.stringify(message));
     }
   }
 
+  /** Genera un ID único para notificaciones. */
   generateId() {
     return Date.now().toString(36) + Math.random().toString(36).substr(2);
   }
 
+  /** Devuelve el array de datos de clientes conectados (userId, email, name, connectedAt). */
   getConnectedClients() {
     return Array.from(this.clients.values());
   }
 
+  /** Devuelve la referencia al array de notificaciones en memoria (para que el controlador pueda añadir/broadcast). */
   getNotifications() {
     return this.notifications;
   }

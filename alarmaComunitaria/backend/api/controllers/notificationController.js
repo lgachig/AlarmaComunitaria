@@ -1,16 +1,29 @@
-// Controlador de notificaciones
+/**
+ * Controlador de notificaciones: envía/recibe notificaciones, integra con WebSocket y con el módulo de cámara.
+ */
 let wsServer;
 
+/**
+ * Asigna la instancia del servidor WebSocket para broadcast y lista de notificaciones.
+ * @param {import('../websocket-server')} server - Instancia de NotificationWebSocketServer
+ */
 const setWebSocketServer = (server) => {
   wsServer = server;
 };
 
 const Notification = require('../models/Notification');
 
-// Usuarios conectados y su ubicación
-const connectedUsers = new Map(); // userId -> { lat, lon, ws }
+/** Mapa de usuarios conectados y su ubicación: userId -> { lat, lon, ws } */
+const connectedUsers = new Map();
 
-// Haversine para distancia en km
+/**
+ * Calcula la distancia en km entre dos puntos por la fórmula de Haversine.
+ * @param {number} lat1 - Latitud punto 1
+ * @param {number} lon1 - Longitud punto 1
+ * @param {number} lat2 - Latitud punto 2
+ * @param {number} lon2 - Longitud punto 2
+ * @returns {number} Distancia en kilómetros
+ */
 function calcularDistancia(lat1, lon1, lat2, lon2) {
   const R = 6371;
   const toRad = deg => deg * Math.PI / 180;
@@ -23,7 +36,11 @@ function calcularDistancia(lat1, lon1, lat2, lon2) {
   return R * c;
 }
 
-// Recibir estado de la cámara
+/**
+ * Recibe el estado de la cámara (p. ej. activa/inactiva), lo guarda en MongoDB y hace broadcast a todos los clientes WebSocket.
+ * @param {import('express').Request} req - body: { status }
+ * @param {import('express').Response} res
+ */
 const recibirEstado = async (req, res) => {
   try {
     const { status } = req.body;
@@ -41,7 +58,12 @@ const recibirEstado = async (req, res) => {
   }
 };
 
-// Recibir detalle de la cámara
+/**
+ * Recibe el detalle de una alerta enviada por el módulo de cámara (Python). Crea la notificación, la guarda en MongoDB,
+ * la añade a la lista del WebSocket y hace broadcast a todos los clientes (new_notification y actualizar_camara).
+ * @param {import('express').Request} req - body: { nombre_camara, ubicacion, fecha, alerta, informacion_extra }
+ * @param {import('express').Response} res
+ */
 const recibirDetalleCamara = async (req, res) => {
   try {
     const data = req.body;
@@ -92,17 +114,30 @@ const recibirDetalleCamara = async (req, res) => {
   }
 };
 
-// WebSocket: registrar ubicación
+/**
+ * Registra la ubicación de un usuario conectado por WebSocket (para notificaciones por cercanía).
+ * @param {string} userId
+ * @param {number} lat
+ * @param {number} lon
+ * @param {import('ws')} ws
+ */
 const registrarUbicacion = (userId, lat, lon, ws) => {
   connectedUsers.set(userId, { lat, lon, ws });
 };
 
-// WebSocket: desconectar usuario
+/**
+ * Elimina a un usuario del mapa de ubicaciones al desconectarse del WebSocket.
+ * @param {string} userId
+ */
 const desconectarUsuario = (userId) => {
   connectedUsers.delete(userId);
 };
 
-// WebSocket: notificar solo a usuarios cercanos
+/**
+ * Envía un mensaje solo a los clientes WebSocket cuya ubicación está a ≤1 km del punto dado.
+ * @param {{ lat: number, lon: number }} ubicacion
+ * @param {object} payload - Objeto a enviar por WebSocket
+ */
 const notificarUsuariosCercanos = (ubicacion, payload) => {
   for (const [userId, info] of connectedUsers.entries()) {
     if (info.lat != null && info.lon != null) {
@@ -114,7 +149,11 @@ const notificarUsuariosCercanos = (ubicacion, payload) => {
   }
 };
 
-// Enviar notificación (requiere autenticación)
+/**
+ * Crea y envía una notificación manual (requiere JWT). La añade a la lista del WebSocket y hace broadcast.
+ * @param {import('express').Request} req - body: { title, message, alertType?, location, imageUrl? }; req.user del JWT
+ * @param {import('express').Response} res
+ */
 const sendNotification = (req, res) => {
   try {
     const { title, message, alertType, location, imageUrl } = req.body;
@@ -151,7 +190,11 @@ const sendNotification = (req, res) => {
   }
 };
 
-// Obtener notificaciones (requiere autenticación)
+/**
+ * Devuelve la lista de notificaciones en memoria del WebSocket, ordenadas por fecha descendente (requiere JWT).
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ */
 const getNotifications = (req, res) => {
   try {
     const notifications = wsServer.getNotifications();
@@ -165,7 +208,11 @@ const getNotifications = (req, res) => {
   }
 };
 
-// Notificación de prueba
+/**
+ * Crea una notificación de prueba (sin JWT) y hace broadcast. Útil para probar el WebSocket y el panel.
+ * @param {import('express').Request} req - body opcional: { title, message, alertType, location, imageUrl }
+ * @param {import('express').Response} res - { success, notification, connectedClients }
+ */
 const testNotification = (req, res) => {
   try {
     const { title, message, alertType, location, imageUrl } = req.body;
@@ -200,7 +247,11 @@ const testNotification = (req, res) => {
   }
 };
 
-// Ver clientes conectados
+/**
+ * Devuelve la lista de clientes conectados al WebSocket (requiere JWT).
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res - { connectedClients, count }
+ */
 const getConnectedClients = (req, res) => {
   const clients = wsServer.getConnectedClients();
   res.json({

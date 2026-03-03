@@ -1,78 +1,87 @@
-# Alarma Comunitaria – Sistema de Detección y Alerta en Tiempo Real
+# Alarma Comunitaria – Módulo Cámara (Detección y Alerta en Tiempo Real)
 
-# Descripción General
-Alarma Comunitaria es un sistema integral de videovigilancia inteligente que detecta situaciones de peligro (como la presencia de armas o comportamientos sospechosos) en tiempo real usando modelos de inteligencia artificial (YOLOv8 y Gemini AI). El sistema graba evidencia en video, la sube automáticamente a la nube (Backblaze B2), genera una descripción automática del evento y notifica a los usuarios conectados mediante una interfaz web y notificaciones en tiempo real.
+Módulo de **videovigilancia inteligente** que detecta situaciones de riesgo (armas, personas) en tiempo real con YOLOv8 y Gemini AI, graba evidencia, la sube a Backblaze B2 y notifica a la API central para que los clientes reciban alertas por WebSocket.
 
+## Descripción
 
-# Características Principales
-- Detección automática de armas y persona usando modelos YOLOv8.
-- Grabación de video Solo cuando se detecta una situación de peligro.
-- Subida automática de videos a la nube (Backblaze B2) para resguardo y consulta.
-- Generación de descripciones automáticas de los eventos usando IA (Gemini de Google).
-- Notificaciones en tiempo real a usuarios conectados mediante WebSockets.
-- Interfaz web para monitoreo y visualización de alertas (Prueba).
-- Geolocalización de cámaras y usuarios para alertas personalizadas.
+- **Detección:** YOLOv8 (Ultralytics) para objetos (armas, personas, etc.) en el flujo de la cámara.
+- **Grabación:** Solo cuando se detecta un evento de interés; el video se guarda localmente.
+- **Nube:** Subida automática a Backblaze B2 para resguardo.
+- **Descripción:** Generación de descripción del evento con IA (Gemini).
+- **Notificaciones:** Envío del detalle a la API Node.js (`POST /api/notifications/detalle`) para que se difunda por WebSocket a la interfaz web.
+- **Streaming:** Flujo MJPEG para visualización en vivo; opcionalmente exposición pública con ngrok.
 
+## Estructura actual (dentro de este repo)
 
-# Estructura del Proyecto
-AlarmaComunitariaBackEndv3.2/
-│
-├── camara/                  # Lógica de detección y gestión de cámara
-│   └── camara.py
-├── descripcionvideo.py      # Procesamiento y descripción automática de videos
-├── ngrok_url_camara.py      # Gestión de túneles públicos con ngrok
-├── preprocessing_images.py  # Utilidades de procesamiento de imágenes
-├── servidorcamara.py        # Servidor principal de la cámara (detección y streaming)
-├── servidornotificaciones.py# Servidor de notificaciones y gestión de usuarios
-├── templates/
-│   └── index.html           # Interfaz web de monitoreo
-├── ultima_url.txt           # Última URL de video subido
-├── requirements.txt         # Dependencias del proyecto
-└── README.md                # Este archivo
+```
+backend/
+├── camara/
+│   ├── camara.py           # Lógica de detección (YOLOv8) y captura
+│   ├── servidorcamara.py   # Servidor Flask: streaming, ngrok, descripción, envío a API
+│   ├── descripcionvideo.py # Descripción automática del video con IA (Gemini)
+│   ├── ngrok_url_camara.py # Gestión de túneles ngrok
+│   ├── modelos/            # Pesos de modelos (p. ej. YOLOv8)
+│   └── README.md           # Este archivo
+├── requirements.txt       # Dependencias Python (raíz backend)
+└── ...
+```
 
+## Instalación
 
-# Instalación
-1. Clona el repositorio:
-   git clone <URL-del-repositorio>
-   cd AlarmaComunitariaBackEndv3.2
+1. Clonar el repositorio y ubicarse en el backend:
+   ```bash
+   cd alarmaComunitaria/backend
+   ```
 
-2. Instala las dependencias:
+2. Instalar dependencias Python:
+   ```bash
    pip install -r requirements.txt
+   ```
 
-3. Configura los modelos YOLOv8:
-   - Coloca los archivos de pesos (`best.pt`, `yolov8n.pt`, etc.) en las rutas indicadas en `camara/camara.py`.
+3. **Modelos YOLOv8:**  
+   Colocar los archivos de pesos (`best.pt`, `yolov8n.pt`, etc.) en las rutas que use `camara/camara.py`.
 
-4. Configura las credenciales de Backblaze B2:
-   - Las credenciales están en el código, pero puedes cambiarlas por seguridad.
+4. **Backblaze B2:**  
+   Configurar credenciales (recomendado usar variables de entorno o archivo de configuración; evitar credenciales fijas en código en producción).
 
+5. **API Node:**  
+   La API debe estar corriendo (p. ej. `http://localhost:3000`). En `servidorcamara.py` (o el script que envía el detalle) debe estar configurada la URL base de la API y el endpoint `POST /api/notifications/detalle` (y opcionalmente `/estado`).
 
-# Ejecución
-1. Inicia el servidor de notificaciones:
-   python servidornotificaciones.py
+## Ejecución
 
-2. Inicia el servidor de la cámara:
+1. Iniciar la **API** (Node.js):
+   ```bash
+   cd api && npm start
+   ```
+
+2. Iniciar el **servidor de cámara** (desde `backend/camara` o con `PYTHONPATH` adecuado):
+   ```bash
+   cd camara
    python servidorcamara.py
+   ```
+   - Flask corre en un puerto disponible (p. ej. 5001–5010).
+   - Si se usa ngrok, la URL pública se imprime en consola.
 
-3. Accede a la interfaz web:
-   - Abre `templates/index.html` en tu navegador o accede a la URL pública generada por ngrok (se mostrará en consola).
+3. Acceder al streaming:
+   - Local: `http://localhost:<puerto>/`
+   - Público: URL de ngrok si está configurado.
 
-4. Prueba el sistema:
-   - Realiza una acción sospechosa frente a la cámara (por ejemplo, muestra un cuchillo) y observa cómo se graba el video, se sube a la nube y se notifica a los usuarios.
+4. Probar: generar un evento detectado (p. ej. objeto clasificado como arma); el sistema debe grabar, procesar, enviar el detalle a la API y los clientes conectados por WebSocket recibirán la notificación.
 
+## Detalles técnicos
 
-# Detalles Técnicos
-- Detección: Se realiza en tiempo real usando OpenCV y modelos YOLOv8.
-- Almacenamiento en la nube: Los videos se suben automáticamente a Backblaze B2.
-- Descripción automática: Se usa Gemini AI para analizar el video y generar una descripción textual del evento.
-- Notificaciones: Se envían mediante Flask-SocketIO a todos los usuarios conectados.
-- Geolocalización: Los usuarios y cámaras pueden ser geolocalizados para alertas personalizadas.
+- **Detección:** OpenCV + YOLOv8 en tiempo real sobre el flujo de video.
+- **Almacenamiento:** Videos subidos a Backblaze B2 (configurar bucket y credenciales).
+- **Descripción:** Gemini AI para generar texto descriptivo del evento a partir del video.
+- **Notificaciones:** HTTP POST a la API Node; la API guarda en MongoDB y hace broadcast por WebSocket.
+- **Geolocalización:** El detalle enviado a la API puede incluir ubicación para mostrar la alerta en el mapa del frontend.
 
+## Seguridad
 
-# Seguridad
-- Las credenciales de Backblaze están actualmente en el código para pruebas. Cámbialas antes de usar en producción.
-- El sistema puede ser extendido para autenticación de usuarios y cifrado de datos.
+- No dejar credenciales de B2 o APIs en el código; usar variables de entorno o gestor de secretos.
+- En producción, restringir acceso al streaming y a los endpoints de la cámara; ngrok solo para desarrollo/pruebas si aplica.
 
+## Créditos
 
-# Créditos y Licencia
-Desarrollado por [Grupo6, Javier Saransig, Carlos Patiño y Luis Achig ].  
-Basado en modelos YOLOv8 y Gemini AI.  
+Desarrollado por Grupo 6 (Javier Saransig, Carlos Patiño, Luis Achig).  
+Basado en YOLOv8 (Ultralytics) y Gemini AI.

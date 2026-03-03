@@ -5,7 +5,11 @@ const User = require('../models/User');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'tu_jwt_secret_super_seguro';
 
-// Obtener todos los usuarios
+/**
+ * Obtiene la lista de todos los usuarios registrados (sin incluir la contraseña).
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ */
 const getUsers = async (req, res) => {
   try {
     const users = await User.find({}, '-password');
@@ -15,7 +19,11 @@ const getUsers = async (req, res) => {
   }
 };
 
-// Registrar usuario
+/**
+ * Registra un nuevo usuario (nombre, email, contraseña). La contraseña se hashea con bcrypt en el modelo.
+ * @param {import('express').Request} req - body: { name, email, password }
+ * @param {import('express').Response} res
+ */
 const registerUser = async (req, res) => {
   try {
     const { name, email, password } = req.body;
@@ -41,7 +49,11 @@ const registerUser = async (req, res) => {
   }
 };
 
-// Login usuario
+/**
+ * Autentica al usuario con email y contraseña; devuelve un JWT y los datos del usuario.
+ * @param {import('express').Request} req - body: { email, password }
+ * @param {import('express').Response} res - { success, token, user: { id, name, email } }
+ */
 const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;

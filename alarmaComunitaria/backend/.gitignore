@@ -1,0 +1,30 @@
+# Node (api)
+node_modules/
+npm-debug.log*
+.env
+.env.local
+dist/
+
+# Python (camara, sonido)
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+venv/
+.venv/
+*.egg-info/
+.eggs/
+
+# Modelos y datos sensibles
+*.pt
+*.pth
+ultima_url.txt
+
+# Logs
+*.log
+logs/
+
+# IDE y sistema
+.idea/
+.vscode/
+.DS_Store

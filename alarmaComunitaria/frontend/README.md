@@ -1,59 +1,72 @@
-# AlarmaComunitaria
+# Frontend – Alarma Comunitaria (Angular)
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 19.2.13.
+Aplicación web del sistema **Alarma Comunitaria**: login, registro, mapa de puntos (robos, secuestros, cámaras), panel de notificaciones en tiempo real vía WebSocket y visualización del stream de cámara.
 
-## Development server
+## De qué trata
 
-To start a local development server, run:
+- **Autenticación:** Login y registro; sesión con JWT.
+- **Dashboard:** Mapa (Leaflet) con clusters de marcadores; puntos de tipo robo, secuestro y cámara.
+- **Notificaciones:** Panel de notificaciones en tiempo real; conexión WebSocket a la API con reconexión automática.
+- **Alertas:** Popup de alerta y formulario para enviar alertas manuales; recepción de alertas automáticas desde el módulo de cámara.
+- **Cámara:** Vista del stream de video (URL configurable) cuando hay cámara disponible.
+
+La app consume la API en `http://localhost:3000` (configurable en los servicios) y se conecta al WebSocket `ws://localhost:3000/ws` con el token JWT.
+
+## Stack
+
+- **Angular** 19.2
+- **Leaflet** + **leaflet.markercluster** para el mapa
+- **RxJS** para estado y flujos asíncronos
+- **TypeScript** 5.7
+
+## Requisitos
+
+- Node.js 18+
+- npm o yarn
+
+## Instalación y ejecución
 
 ```bash
+npm install
 ng serve
 ```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+Abrir `http://localhost:4200`. La aplicación redirige a `/login` si no hay sesión; tras iniciar sesión se accede al dashboard.
 
-## Code scaffolding
+## Scripts
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+| Comando | Descripción |
+|--------|-------------|
+| `npm start` / `ng serve` | Servidor de desarrollo en `http://localhost:4200` |
+| `ng build` | Build de producción en `dist/` |
+| `ng test` | Tests unitarios (Karma/Jasmine) |
+| `ng e2e` | Tests e2e (configurar según el proyecto) |
 
-```bash
-ng generate component component-name
+## Estructura principal
+
+```
+src/app/
+├── auth/           # Login, registro, guards de autenticación
+├── Components/     # Dashboard (Inicio), mapa, alertas, notificaciones, popup, stream cámara
+├── services/       # Auth, notificaciones, WebSocket, almacenamiento
+└── Share/          # Interfaces, validadores, recursos compartidos
 ```
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+## Configuración de la API
 
-```bash
-ng generate --help
-```
+La URL base de la API y del WebSocket suele estar en los servicios (p. ej. `AuthService`, `NotificationService`, `WebSocketService`). Por defecto se usa `http://localhost:3000` y `ws://localhost:3000/ws`. Para otro entorno, ajustar esas URLs en el código o mediante un archivo de entorno si se añade soporte.
 
-## Building
+## Rutas
 
-To build the project run:
+- `` → redirección a `/login`
+- `/login` → Inicio de sesión
+- `/register` → Registro
+- `/dashboard` → Panel principal (protegido con `AuthGuard`)
+- `**` → redirección a `/login`
 
-```bash
-ng build
-```
+## Recursos
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+- [Angular CLI](https://angular.dev/tools/cli)
+- [Documentación Angular](https://angular.dev)
 
-## Running unit tests
-
-To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:
-
-```bash
-ng test
-```
-
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+Para el flujo completo del sistema (backend + frontend + cámara + sonido), ver [../docs/MANUAL_SISTEMA.md](../docs/MANUAL_SISTEMA.md).

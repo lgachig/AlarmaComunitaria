@@ -1,3 +1,7 @@
+/**
+ * Servidor principal de la API Alarma Comunitaria: Express (REST), MongoDB y WebSocket.
+ * Puerto por defecto: 3000. WebSocket en el mismo servidor HTTP (path /ws).
+ */
 // =========================
 //        IMPORTS
 // =========================
@@ -44,9 +48,6 @@ mongoose.connect('mongodb+srv://elluis20026:CRUZlucho.com@practica.81cgj.mongodb
 app.use(cors());
 app.use(express.json());
 
-// Montar el router de puntos
-app.use('/api/puntos', require('./routes/puntos'));
-
 // =========================
 //   INICIALIZACIÓN WS
 // =========================
@@ -64,6 +65,7 @@ app.get('/', (req, res) => {
 // =========================
 //      AUTENTICACIÓN
 // =========================
+/** Middleware: verifica JWT en Authorization: Bearer <token> y asigna req.user (userId, email, name). */
 const authenticateToken = (req, res, next) => {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];

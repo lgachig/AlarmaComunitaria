@@ -1,3 +1,6 @@
+/**
+ * Modelo de punto en el mapa: tipo (robo, secuestro, camara), coordenadas, titulo, descripcion, fecha, usuarioId, direccion.
+ */
 const mongoose = require('mongoose');
 
 const PuntoSchema = new mongoose.Schema({

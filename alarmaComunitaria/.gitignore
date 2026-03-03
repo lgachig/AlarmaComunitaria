@@ -1,0 +1,43 @@
+# Dependencias
+node_modules/
+
+# Entorno y secretos
+.env
+.env.local
+.env.*.local
+*.pem
+
+# Logs y temporales
+*.log
+npm-debug.log*
+logs/
+tmp/
+temp/
+
+# IDE y sistema
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Builds y caché
+dist/
+build/
+.angular/cache
+
+# Python (backend camara/sonido)
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+venv/
+.venv/
+*.egg-info/
+.eggs/
+
+# Modelos y datos locales (opcional)
+*.pt
+*.pth
+ultima_url.txt

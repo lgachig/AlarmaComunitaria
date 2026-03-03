@@ -1,3 +1,7 @@
+/**
+ * Modelo de usuario: nombre, email y contraseña (hasheada con bcrypt en pre-save).
+ * Método: comparePassword(candidatePassword) para validar login.
+ */
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
