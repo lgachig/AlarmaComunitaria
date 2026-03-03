@@ -34,7 +34,7 @@ Tienes dos opciones para obtener el código fuente:
 - **Opción A: Clonar el repositorio con git**
 
   ```bat
-  git clone https://github.com/javier020301001/AlarmaComunitaria.git
+  git clone https://github.com/lgachig/AlarmaComunitaria.git
   ```
 - **Opción B: Descargar el proyecto completo como archivo ZIP**
 
@@ -256,13 +256,6 @@ AlarmaComunitaria-main/
   Se recomienda usar variables de entorno para mayor seguridad.
 - **Inicio de sesión:**  
   El sistema puede extenderse para autenticación de usuarios y cifrado de datos.
-
----
-
-## 🤝 Contribuciones
-
-¿Quieres mejorar el sistema?  
-Haz un fork, crea una rama y envía tu pull request. ¡Toda contribución es bienvenida!
 
 ---
 

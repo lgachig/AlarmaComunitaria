@@ -82,13 +82,23 @@ class DetectionSystem:
         self.model_personas = YOLO(personas_path)
         print(f"Modelos cargados correctamente:\n  Armas: {armas_path}\n  Personas: {personas_path}")
 
-    # Inicializa la cámara web
+    # Inicializa la cámara web (compatible con Windows y macOS/Linux)
     def setup_camera(self):
-        cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
+        import platform
+        cap = None
+        # En Windows usar CAP_DSHOW; en macOS/Linux usar el backend por defecto o CAP_AVFOUNDATION
+        if platform.system() == 'Windows':
+            cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
+        else:
+            # macOS: probar primero el backend por defecto, luego AVFoundation
+            cap = cv2.VideoCapture(0)
+            if not cap.isOpened():
+                cap = cv2.VideoCapture(0, cv2.CAP_AVFOUNDATION)
         if not cap.isOpened():
-            print("Error: No se pudo abrir la cámara")
-        cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
-        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+            print("Error: No se pudo abrir la cámara (¿está en uso o conectada?)")
+        else:
+            cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+            cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
         return cap
 
     # Método para deshabilitar la grabación (cuando se muestra en frontend)
@@ -267,8 +277,25 @@ class DetectionSystem:
         cv2.putText(frame, f"Fecha y Hora: {fecha_hora}", (20, 460), 
                     cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
 
+    # Genera un frame de placeholder cuando la cámara no está disponible (para que el stream no quede colgado)
+    def _frame_placeholder(self):
+        img = np.zeros((480, 640, 3), dtype=np.uint8)
+        img[:] = (40, 40, 40)
+        cv2.putText(img, "Camara no disponible", (120, 220), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+        cv2.putText(img, "Verifica que la camara este conectada y no este en uso", (50, 260), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (200, 200, 200), 1)
+        return img
+
     # Bucle principal: captura frames, detecta eventos, graba y actualiza estado
     def run_detection(self):
+        # Si la cámara no abrió, usar placeholder para que el stream responda en localhost
+        if not self.cap.isOpened():
+            self.ultimo_frame = self._frame_placeholder()
+            self.status = "Camara desconectada"
+            self.enviar_estado()
+            while self.running:
+                time.sleep(1)
+                self.ultimo_frame = self._frame_placeholder()
+            return
         self.enviar_estado()
         while self.running:
             ret, frame = self.cap.read()
@@ -276,6 +303,9 @@ class DetectionSystem:
                 if self.status != "Camara desconectada":
                     self.status = "Camara desconectada"
                     self.enviar_estado()
+                # Mantener último frame o placeholder para que el stream siga respondiendo
+                if self.ultimo_frame is None:
+                    self.ultimo_frame = self._frame_placeholder()
                 time.sleep(0.1)
                 continue
             else:
